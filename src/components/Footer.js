@@ -26,9 +26,9 @@ function Footer({ siteInfo = {} }) {
           <div className="footer-section">
             <h3 className="footer-title">联系方式</h3>
             <ul className="footer-links">
-              <li><a href="https://github.com" target="_blank" rel="noopener noreferrer"><FaGithub /> GitHub</a></li>
-              <li><a href="https://twitter.com" target="_blank" rel="noopener noreferrer"><FaTwitter /> Twitter</a></li>
-              <li><a href="https://weibo.com" target="_blank" rel="noopener noreferrer"><FaWeibo /> 微博</a></li>
+              <li><a href="https://github.com/jkjoy" target="_blank" rel="noopener noreferrer"><FaGithub /> GitHub</a></li>
+              <li><a href="https://jiong.us/@sun" target="_blank" rel="noopener noreferrer"><FaMastodon /> Mastodon</a></li>
+              <li><a href="https://weibo.com/sunpw" target="_blank" rel="noopener noreferrer"><FaWeibo /> 微博</a></li>
             </ul>
           </div>
         </div>
