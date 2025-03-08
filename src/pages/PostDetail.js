@@ -26,6 +26,9 @@ function PostDetail() {
         // Fetch post details
         const postResponse = await getPostBySlug(postIdentifier);
         
+        // Debug: Log post response to check for token
+        console.log('Post response:', postResponse);
+        
         // Fetch categories for sidebar
         const categoriesResponse = await getCategories();
         
@@ -136,7 +139,7 @@ function PostDetail() {
             />
           </article>
           
-          <CommentSection postId={post.cid} slug={post.slug} token={post.token} />
+          <CommentSection postId={post.cid} slug={post.slug} token={post.csrfToken} />
         </div>
         
         <div className="col-md-4">

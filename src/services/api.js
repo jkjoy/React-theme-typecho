@@ -79,6 +79,26 @@ export const getPostBySlug = async (slugOrCid) => {
     if (response.data && response.data.status === 'success') {
       const postData = response.data.data;
       
+      // Extract CSRF token from the response and add it to the post data
+      if (response.data.csrfToken) {
+        postData.csrfToken = response.data.csrfToken;
+        console.log('Found CSRF token in API response:', postData.csrfToken);
+      } else if (response.headers && response.headers['x-csrf-token']) {
+        postData.csrfToken = response.headers['x-csrf-token'];
+        console.log('Found CSRF token in response headers:', postData.csrfToken);
+      } else {
+        console.log('No CSRF token found in the API response. Checking if token is in post data.');
+        // Check if the token is included in the post data itself
+        if (postData && postData.csrfToken) {
+          console.log('Found CSRF token in post data:', postData.csrfToken);
+        } else {
+          // Generate a temporary token for development purposes
+          const tempToken = Math.random().toString(36).substring(2, 15);
+          postData.csrfToken = tempToken;
+          console.log('Generated temporary CSRF token for development:', tempToken);
+        }
+      }
+      
       // Process the post data to ensure it has the correct structure
       if (postData) {
         // Make sure text field is mapped to content if needed
@@ -232,33 +252,49 @@ export const getPageBySlug = async (slug) => {
   }
 };
 
-// Get all categories
+/**
+ * Fetch all categories
+ * @returns {Promise<Array>} Array of category objects
+ */
 export const getCategories = async () => {
   try {
     const response = await apiClient.get('/api/categories');
-    // Check if the response has the expected structure
-    if (response.data && response.data.status === 'success') {
-      // Return the categories array directly
-      return response.data.data || [];
+    console.log('Categories data:', response.data);
+    
+    if (response.data && response.data.status === 'success' && response.data.data) {
+      return response.data.data;
+    } else if (response.data && response.data.status === 'error') {
+      console.error('Error fetching categories:', response.data.message);
+      return [];
     }
+    
     return [];
   } catch (error) {
-    return handleApiError(error);
+    console.error('Error fetching categories:', error);
+    return [];
   }
 };
 
-// Get all tags
+/**
+ * Fetch all tags
+ * @returns {Promise<Array>} Array of tag objects
+ */
 export const getTags = async () => {
   try {
     const response = await apiClient.get('/api/tags');
-    // Check if the response has the expected structure
-    if (response.data && response.data.status === 'success') {
-      // Return the tags array directly
-      return response.data.data || [];
+    console.log('Tags data:', response.data);
+    
+    if (response.data && response.data.status === 'success' && response.data.data) {
+      return response.data.data;
+    } else if (response.data && response.data.status === 'error') {
+      console.error('Error fetching tags:', response.data.message);
+      return [];
     }
+    
     return [];
   } catch (error) {
-    return handleApiError(error);
+    console.error('Error fetching tags:', error);
+    return [];
   }
 };
 
@@ -287,20 +323,30 @@ export const getCommentsByPostId = async (postId, params = {}) => {
   }
 };
 
-// Get recent comments
-export const getRecentComments = async (size = 5) => {
+/**
+ * Fetch recent comments
+ * @param {number} size - Number of comments to fetch
+ * @returns {Promise<Array>} Array of recent comments
+ */
+export const getRecentComments = async (size = 9) => {
   try {
-    const response = await apiClient.get('/api/recentComments', { 
-      params: { size } 
+    const response = await apiClient.get('/api/recentComments', {
+      params: { size }
     });
-    // Check if the response has the expected structure
-    if (response.data && response.data.status === 'success') {
-      // Return the comments array directly
-      return response.data.data || [];
+    
+    console.log('Recent comments data:', response.data);
+    
+    if (response.data && response.data.status === 'success' && response.data.data && response.data.data.dataSet) {
+      return response.data.data.dataSet;
+    } else if (response.data && response.data.status === 'error') {
+      console.error('Error fetching recent comments:', response.data.message);
+      return [];
     }
+    
     return [];
   } catch (error) {
-    return handleApiError(error);
+    console.error('Error fetching recent comments:', error);
+    return [];
   }
 };
 
@@ -311,6 +357,28 @@ export const postComment = async (commentData) => {
     return processResponse(response);
   } catch (error) {
     return handleApiError(error);
+  }
+};
+
+// Get CSRF token for comment submission
+export const getCsrfToken = async (postId) => {
+  try {
+    // Make a request to get the CSRF token
+    const response = await apiClient.get('/api/csrf', { 
+      params: { cid: postId }
+    });
+    
+    if (response.data && response.data.status === 'success' && response.data.csrfToken) {
+      return response.data.csrfToken;
+    } else if (response.headers && response.headers['x-csrf-token']) {
+      return response.headers['x-csrf-token'];
+    }
+    
+    console.warn('No CSRF token found in the API response');
+    return null;
+  } catch (error) {
+    console.error('Error fetching CSRF token:', error);
+    return null;
   }
 };
 
@@ -356,5 +424,6 @@ export default {
   getCommentsByPostId,
   getRecentComments,
   postComment,
+  getCsrfToken,
   getSettings
 };

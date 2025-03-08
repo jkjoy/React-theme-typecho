@@ -1,41 +1,92 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaFolder, FaTags, FaComment, FaSearch } from 'react-icons/fa';
+import { FaFolder, FaTags, FaComment, FaQuoteLeft } from 'react-icons/fa';
+import { getRecentComments } from '../services/api';
 
-function Sidebar({ categories = [], tags = [], recentComments = [], activeCategorySlug, activeTagSlug }) {
-  const [searchKeyword, setSearchKeyword] = React.useState('');
+function Sidebar({ categories = [], tags = [], activeCategorySlug, activeTagSlug }) {
+  const [recentComments, setRecentComments] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchKeyword.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchKeyword)}`;
-    }
+  useEffect(() => {
+    const fetchRecentComments = async () => {
+      try {
+        setLoading(true);
+        const comments = await getRecentComments(10);
+        setRecentComments(Array.isArray(comments) ? comments : []);
+      } catch (error) {
+        console.error('Error fetching recent comments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentComments();
+  }, []);
+
+  // Function to decode HTML entities
+  const decodeHtmlEntities = (text) => {
+    if (!text) return '';
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
+  };
+
+  // Function to strip HTML tags
+  const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<\/?[^>]+(>|$)/g, "");
+  };
+
+  // Process comment text
+  const processCommentText = (text) => {
+    if (!text) return '';
+    const decodedText = decodeHtmlEntities(text);
+    const strippedText = stripHtml(decodedText);
+    return strippedText.length > 40 ? `${strippedText.substring(0, 40)}...` : strippedText;
   };
 
   return (
     <div className="sidebar-container">
-      {/* Search Widget */}
+      {/* Recent Comments Widget */}
       <div className="sidebar">
-        <h3 className="sidebar-title">搜索</h3>
-        <form className="search-form" onSubmit={handleSearch}>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="输入关键词搜索..."
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-          />
-          <button type="submit" className="search-button">
-            <FaSearch />
-          </button>
-        </form>
+        <h3 className="sidebar-title">
+          <FaComment className="sidebar-icon" />
+          最新评论
+        </h3>
+        {loading ? (
+          <div className="loading-comments">加载评论中...</div>
+        ) : recentComments.length > 0 ? (
+          <ul className="sidebar-list comment-list">
+            {recentComments.map(comment => (
+              <li key={comment.coid} className="comment-item">
+                <Link to={`/post/${comment.cid}#comment-${comment.coid}`} className="comment-link">
+                  <div className="comment-header">
+                    <span className="comment-author">
+                      {decodeHtmlEntities(comment.author)}
+                    </span>
+                  </div>
+                  <div className="comment-content">
+                    <div className="comment-quote">
+                      <FaQuoteLeft className="quote-icon" />
+                      <span className="comment-text">
+                        {processCommentText(comment.text)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="no-comments">暂无评论</div>
+        )}
       </div>
-
+      
       {/* Categories Widget */}
       {categories.length > 0 && (
         <div className="sidebar">
           <h3 className="sidebar-title">
-            <FaFolder style={{ marginRight: '8px' }} />
+            <FaFolder className="sidebar-icon" />
             分类
           </h3>
           <ul className="sidebar-list">
@@ -59,7 +110,7 @@ function Sidebar({ categories = [], tags = [], recentComments = [], activeCatego
       {tags.length > 0 && (
         <div className="sidebar">
           <h3 className="sidebar-title">
-            <FaTags style={{ marginRight: '8px' }} />
+            <FaTags className="sidebar-icon" />
             标签
           </h3>
           <div className="tag-cloud">
@@ -75,30 +126,6 @@ function Sidebar({ categories = [], tags = [], recentComments = [], activeCatego
                 </Link>
               ))}
           </div>
-        </div>
-      )}
-
-      {/* Recent Comments Widget */}
-      {recentComments.length > 0 && (
-        <div className="sidebar">
-          <h3 className="sidebar-title">
-            <FaComment style={{ marginRight: '8px' }} />
-            最新评论
-          </h3>
-          <ul className="sidebar-list">
-            {recentComments.map(comment => (
-              <li key={comment.coid} className="sidebar-list-item">
-                <div className="recent-comment">
-                  <div className="recent-comment-author">{comment.author}</div>
-                  <div className="recent-comment-content">
-                    <Link to={`/post/${comment.cid}`}>
-                      {comment.text.length > 50 ? `${comment.text.substring(0, 50)}...` : comment.text}
-                    </Link>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
         </div>
       )}
     </div>

@@ -7,9 +7,14 @@ import PostDetail from './pages/PostDetail';
 import PageDetail from './pages/PageDetail';
 import CategoryPosts from './pages/CategoryPosts';
 import TagPosts from './pages/TagPosts';
+import Categories from './pages/Categories';
+import Tags from './pages/Tags';
+import About from './pages/About';
 import Archives from './pages/Archives';
 import Search from './pages/Search';
 import NotFound from './pages/NotFound';
+import ThemeToggle from './components/ThemeToggle';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { getSettings } from './services/api';
 import './App.css';
 
@@ -62,25 +67,31 @@ function App() {
   }, [siteInfo]);
 
   return (
-    <Router>
-      <div className="app">
-        <Header siteInfo={siteInfo} />
-        <main className="main-content container">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/post/:slug" element={<PostDetail />} />
-            <Route path="/archives/:cid" element={<PostDetail />} />
-            <Route path="/page/:slug" element={<PageDetail />} />
-            <Route path="/category/:slug" element={<CategoryPosts />} />
-            <Route path="/tag/:slug" element={<TagPosts />} />
-            <Route path="/archives" element={<Archives />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-        <Footer siteInfo={siteInfo} />
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <div className="app">
+          <Header siteInfo={siteInfo} />
+          <main className="main-content container">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/post/:slug" element={<PostDetail />} />
+              <Route path="/archives/:cid" element={<PostDetail />} />
+              <Route path="/page/:slug" element={<PageDetail />} />
+              <Route path="/category/:slug" element={<CategoryPosts />} />
+              <Route path="/tag/:slug" element={<TagPosts />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/tags" element={<Tags />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/archives" element={<Archives />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer siteInfo={siteInfo} />
+          <ThemeToggle />
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 

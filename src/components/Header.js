@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaBars, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSearch, FaHome, FaArchive, FaFolder, FaTags, FaInfoCircle } from 'react-icons/fa';
 
 function Header({ siteInfo = {} }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,10 +43,29 @@ function Header({ siteInfo = {} }) {
           <nav className={`main-nav ${isMenuOpen ? 'open' : ''}`}>
             <ul className="nav-list">
               <li className="nav-item">
-                <Link to="/" onClick={() => setIsMenuOpen(false)}>首页</Link>
+                <Link to="/" onClick={() => setIsMenuOpen(false)}>
+                  <FaHome className="nav-icon" /> 首页
+                </Link>
               </li>
               <li className="nav-item">
-                <Link to="/archives" onClick={() => setIsMenuOpen(false)}>归档</Link>
+                <Link to="/archives" onClick={() => setIsMenuOpen(false)}>
+                  <FaArchive className="nav-icon" /> 归档
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/categories" onClick={() => setIsMenuOpen(false)}>
+                  <FaFolder className="nav-icon" /> 分类
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/tags" onClick={() => setIsMenuOpen(false)}>
+                  <FaTags className="nav-icon" /> 标签
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/about" onClick={() => setIsMenuOpen(false)}>
+                  <FaInfoCircle className="nav-icon" /> 关于
+                </Link>
               </li>
               <li className="nav-item search-item">
                 <form className="header-search-form" onSubmit={handleSearch}>

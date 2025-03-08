@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaUser, FaEnvelope, FaLink, FaReply } from 'react-icons/fa';
-import { getCommentsByPostId, postComment } from '../services/api';
+import { getCommentsByPostId, postComment, getCsrfToken } from '../services/api';
 import md5 from 'md5';
+
+// Get API base URL from environment variables or use default
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://www.imsun.org';
+const COMMENT_ENDPOINT = '/api/comment';
 
 function CommentSection({ postId, slug, token }) {
   const [comments, setComments] = useState([]);
@@ -18,6 +22,37 @@ function CommentSection({ postId, slug, token }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [csrfToken, setCsrfToken] = useState(token || null);
+
+  // Debug token
+  useEffect(() => {
+    console.log('CommentSection received token:', token);
+    if (token) {
+      setCsrfToken(token);
+    }
+  }, [token]);
+
+  // Fetch CSRF token if not provided
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      if (!csrfToken && postId) {
+        try {
+          console.log('Fetching CSRF token for post:', postId);
+          const token = await getCsrfToken(postId);
+          if (token) {
+            console.log('Successfully fetched CSRF token:', token);
+            setCsrfToken(token);
+          } else {
+            console.warn('Failed to fetch CSRF token');
+          }
+        } catch (err) {
+          console.error('Error fetching CSRF token:', err);
+        }
+      }
+    };
+
+    fetchCsrfToken();
+  }, [postId, csrfToken]);
 
   useEffect(() => {
     const fetchComments = async () => {
@@ -73,19 +108,98 @@ function CommentSection({ postId, slug, token }) {
       return;
     }
     
+    // Validate token
+    if (!csrfToken) {
+      console.error('Missing token for comment submission');
+      setSubmitError('评论提交失败：缺少必要的验证信息（token）');
+      return;
+    }
+    
     try {
       setSubmitting(true);
       setSubmitError(null);
       
+      // Prepare comment data - ensure all fields are in the expected format
       const commentData = {
-        ...formData,
+        author: formData.author.trim(),
+        mail: formData.email.trim(), // The server might expect 'mail' instead of 'email'
+        url: formData.url.trim() || '',
+        text: formData.text.trim(),
+        parent: formData.parent || 0,
         cid: postId,
-        token
+        token: csrfToken
       };
       
-      await postComment(commentData);
+      console.log('Submitting comment data:', commentData);
       
-      // Reset form and state
+      // Try using the fetch API with JSON content type
+      try {
+        const response = await fetch(`${API_BASE_URL}${COMMENT_ENDPOINT}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(commentData),
+          mode: 'no-cors' // This might help with CORS issues
+        });
+        
+        console.log('Comment submission response:', response);
+        
+        // Reset form after submission
+        setFormData({
+          author: '',
+          email: '',
+          url: '',
+          text: '',
+          parent: 0
+        });
+        setReplyTo(null);
+        setSubmitSuccess(true);
+        
+        setTimeout(() => {
+          setSubmitSuccess(false);
+        }, 3000);
+        
+        // Refresh comments after a delay
+        setTimeout(async () => {
+          try {
+            const commentsData = await getCommentsByPostId(postId);
+            setComments(Array.isArray(commentsData) ? commentsData : []);
+          } catch (err) {
+            console.error('Error refreshing comments:', err);
+          }
+          setSubmitting(false);
+        }, 2000);
+        
+        return; // Exit early if fetch was successful
+      } catch (fetchError) {
+        console.error('Error using fetch for comment submission:', fetchError);
+        // Fall back to form submission if fetch fails
+      }
+      
+      // Fallback: Direct form submission approach
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${API_BASE_URL}${COMMENT_ENDPOINT}`;
+      form.target = '_blank'; // Open in new tab for debugging
+      form.enctype = 'application/json'; // Change to JSON content type
+      
+      // Add a single JSON field
+      const jsonInput = document.createElement('input');
+      jsonInput.type = 'hidden';
+      jsonInput.name = 'json';
+      jsonInput.value = JSON.stringify(commentData);
+      form.appendChild(jsonInput);
+      
+      // Log the JSON being sent
+      console.log('Sending JSON data:', JSON.stringify(commentData));
+      
+      // Append form to document and submit
+      document.body.appendChild(form);
+      form.submit();
+      
+      // Reset form after submission
       setFormData({
         author: '',
         email: '',
@@ -96,17 +210,26 @@ function CommentSection({ postId, slug, token }) {
       setReplyTo(null);
       setSubmitSuccess(true);
       
-      // Refresh comments
-      const commentsData = await getCommentsByPostId(postId);
-      setComments(Array.isArray(commentsData) ? commentsData : []);
-      
       setTimeout(() => {
         setSubmitSuccess(false);
+        // Clean up
+        document.body.removeChild(form);
       }, 3000);
+      
+      // Refresh comments after a delay
+      setTimeout(async () => {
+        try {
+          const commentsData = await getCommentsByPostId(postId);
+          setComments(Array.isArray(commentsData) ? commentsData : []);
+        } catch (err) {
+          console.error('Error refreshing comments:', err);
+        }
+        setSubmitting(false);
+      }, 2000);
+      
     } catch (err) {
       console.error('Error posting comment:', err);
       setSubmitError('评论提交失败，请稍后再试');
-    } finally {
       setSubmitting(false);
     }
   };
