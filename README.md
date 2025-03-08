@@ -45,9 +45,14 @@ npm run build
 
 ## 配置
 
+### Typecho 插件
+
+https://github.com/jkjoy/typecho-plugin-Restful/releases/tag/v1.2.0
+启用插件后，可以通过 `/api` 访问 Typecho 的 API。
+
 ### API 配置
 
-在 `src/services/api.js` 文件中配置你的 Typecho 博客 API 地址。
+在 `src/services/api.js` 文件中配置你的 Typecho **博客地址** 。
 
 ### 主题配置
 
