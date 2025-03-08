@@ -12,7 +12,7 @@ function BlogPost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const apiUrl = process.env.API_URL || 'https://www.imsun.org';
+        const apiUrl = process.env.REACT_APP_API_URL || 'https://www.imsun.org';
         const response = await axios.get(`${apiUrl}/api/posts/${id}`);
         
         // Check if the response has the expected structure based on the API format

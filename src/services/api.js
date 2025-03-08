@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with default config
 const apiClient = axios.create({
-  baseURL: process.env.API_URL || 'https://www.imsun.org',
+  baseURL: process.env.REACT_APP_API_URL || 'https://www.imsun.org',
   headers: {
     'Content-Type': 'application/json'
   }
